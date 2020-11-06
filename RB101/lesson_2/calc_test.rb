@@ -1,8 +1,21 @@
 require 'yaml'
 MESSAGES = YAML.load_file('calculator_messages.yml')
 
-puts MESSAGES.inspect
+LANGUAGE = 'es'
 
+def messages(message, lang='en')
+  MESSAGES[lang][message]
+end
+
+def prompt(key)
+  message = messages(key, LANGUAGE)   # make sure the "messages" method is declared above this line
+  Kernel.puts("=> #{message}")
+end
+
+# now you can just do:
+
+
+puts MESSAGES.inspect
 def prompt(message)
   Kernel.puts("=> #{message}")
 end
@@ -25,13 +38,14 @@ def operation_to_method(op)
 end
 
 name = ''
-prompt("Welcome to the Calculator! Enter your name: ")
+prompt(messages('welcome', LANGUAGE))
+#prompt("Welcome to the Calculator! Enter your name: ")
 
 loop do
   name = Kernel.gets().chomp()
 
   if name.empty?
-    prompt('Make sure to enter a valid name!')
+    prompt(messages('valid_name', LANGUAGE))
   else
     break
   end
