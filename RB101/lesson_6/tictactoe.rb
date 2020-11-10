@@ -1,17 +1,16 @@
-WINNING_LINES = [[1, 2, 3], [4, 5, 6], [7, 8, 9]] +
-                [[1, 4, 7], [2, 5, 8], [3, 6, 9]] +
-                [[1, 5, 9], [3, 5, 7]]
+WINNING_LINES = [[1, 2, 3], [4, 5, 6], [7, 8, 9],
+                 [1, 4, 7], [2, 5, 8], [3, 6, 9],
+                 [1, 5, 9], [3, 5, 7]].freeze
 
-
-INITIAL_MARKER = ' ' 
-PLAYER_MARKER = 'X'
-COMPUTER_MARKER = 'O'
+INITIAL_MARKER = ' '.freeze
+PLAYER_MARKER = 'X'.freeze
+COMPUTER_MARKER = 'O'.freeze
 
 def prompt(msg)
   puts "=> #{msg}"
 end
 
-def joinor(arr, punc = ", ", last_word = "or")
+def joinor(arr, punc = ', ', last_word = 'or')
   if arr.length == 1
     "#{arr[0]}"
   elsif arr.length == 2
@@ -54,7 +53,7 @@ end
 def player_places_piece!(brd)
   square = ''
   loop do
-    prompt("Choose a square #{joinor(empty_squares(brd) )}:")
+    prompt("Choose a square #{joinor(empty_squares(brd))}:")
     square = gets.chomp.to_i
     break if empty_squares(brd).include?(square)
 
@@ -63,20 +62,33 @@ def player_places_piece!(brd)
   brd[square] = PLAYER_MARKER
 end
 
+# rubocop:disable Metrics/MethodLength, Metrics/CyclomaticComplexity
 def computer_places_piece!(brd)
   square = nil
+
+  # offense
   WINNING_LINES.each do |line|
-    square = find_at_risk_square(line, brd)
+    square = find_at_risk_square(line, brd, COMPUTER_MARKER)
     break if square
   end
 
-  if !square
-    square = empty_squares(brd).sample
+  # defense first
+  unless square
+    WINNING_LINES.each do |line|
+      square = find_at_risk_square(line, brd, PLAYER_MARKER)
+      break if square
+    end
   end
+
+  # choose square 5 if has INTIAL_MARKER = " "
+  square ||= 5 if brd[5] == INITIAL_MARKER
+
+  # just pick a square
+  square ||= empty_squares(brd).sample
 
   brd[square] = COMPUTER_MARKER
 end
-
+# rubocop:enable Metrics/MethodLength, Metrics/CyclomaticComplexity
 
 def board_full?(brd)
   empty_squares(brd).empty?
@@ -88,26 +100,23 @@ end
 
 def detect_winner(brd)
   WINNING_LINES.each do |line|
-    if brd.values_at(*line).count(PLAYER_MARKER) == 3
-      return 'Player'
-    elsif brd.values_at(*line).count(COMPUTER_MARKER) == 3
-      return 'Computer'
-    end
+    return 'Player' if brd.values_at(*line).count(PLAYER_MARKER) == 3
+
+    return 'Computer' if brd.values_at(*line).count(COMPUTER_MARKER) == 3
   end
   nil
 end
 
-def find_at_risk_square(line, board)
-  if board.values_at(*line).count('X') == 2
-    board.select{|k,v| line.include?(k) && v == ' '}.keys.first
-  else
-    nil
-  end
+def find_at_risk_square(line, board, marker)
+  return unless board.values_at(*line).count(marker) == 2
+
+  board.select { |k, v| line.include?(k) && v == INITIAL_MARKER }.keys.first
 end
 
 computer_running_total = 0
 player_running_total = 0
 
+# rubocop:disable Metrics/BlockLength
 loop do
   board = intialize_board
 
@@ -128,26 +137,24 @@ loop do
   else
     prompt("It's a tie!")
   end
-  
-  if detect_winner(board) == "Player"
+
+  if detect_winner(board) == 'Player'
     player_running_total += 1
-  elsif detect_winner(board) == "Computer"
+  elsif detect_winner(board) == 'Computer'
     computer_running_total += 1
   end
-  
+
   puts "Player: #{player_running_total}, Computer: #{computer_running_total}"
-  puts "First to five wins completes the game!"
-  
-  
-  
+  puts 'First to five wins the game!'
+
   if computer_running_total == 5 || player_running_total == 5
-    puts computer_running_total == 5 ? "COMPUTER is the grand winner!" : "Humans won!"
+    puts computer_running_total == 5 ? 'COMPUTER is the grand winner!' : 'Humans won!'
   end
 
   prompt('Play again? (y or n)')
   answer = gets.chomp
   break unless answer.downcase.start_with?('y')
-  
 end
+# rubocop:enable Metrics/BlockLength
 
 prompt 'Thanks for playing Tic Tac Toe. Goodbye!'
