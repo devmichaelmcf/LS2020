@@ -142,12 +142,41 @@ class TTTGame
   HUMAN_MARKER = "X"
   COMPUTER_MARKER = "O"
   
-  attr_reader :board, :human, :computer
+  attr_reader :board, :human, :computer, :current_player
   def initialize
     @board = Board.new
     @human = Player.new(HUMAN_MARKER)
     @computer = Player.new(COMPUTER_MARKER)
+    @first_to_move = @computer
+    @current_player = @first_to_move
   end
+  
+  def play
+    clear
+    
+    display_welcome_message
+    
+    loop do
+      display_board
+      
+        loop do
+          current_player_moves
+          break if board.someone_won? || board.full?
+          swap_current_player_turn
+          clear_screen_and_display_board if human_turn?
+        end
+      
+      display_result
+      break unless play_again?
+      reset
+      reset_current_player_to_human    # resets starting player to HUMAN first.
+      display_play_again_message
+    end
+    
+    display_goodbye_message
+  end
+  
+  private
   
   def clear
     system 'clear'
@@ -190,6 +219,18 @@ class TTTGame
     board.[]=(board.unmarked_keys.sample, computer.marker)
   end
   
+  def current_player_moves
+    @current_player == @human ? human_moves : computer_moves
+  end
+  
+  def human_turn?
+    @current_player == @human
+  end
+  
+  def computer_turn?
+    @current_player == @computer
+  end
+  
   def display_result
     clear_screen_and_display_board
     
@@ -213,6 +254,18 @@ class TTTGame
     puts ""
   end
   
+  def reset_current_player_to_human
+    @current_player = @human
+  end
+  
+  def swap_current_player_turn
+    if @current_player == @human
+      @current_player = @computer
+    else
+      @current_player = @human
+    end
+  end
+  
   def play_again?
     answer = nil
     
@@ -226,31 +279,30 @@ class TTTGame
     answer == 'y'
   end
   
-  def play
-    clear
+  # def play
+  #   clear
     
-    display_welcome_message
+  #   display_welcome_message
     
-    loop do
-      display_board
+  #   loop do
+  #     display_board
       
-      loop do
-        human_moves
-        break if board.someone_won? || board.full?
-        
-        computer_moves
-        break if board.someone_won? || board.full?
-
-        clear_screen_and_display_board
-      end
-      display_result
-      break unless play_again?
-      reset
-      display_play_again_message
-    end
+  #       loop do
+  #         current_player_moves
+  #         break if board.someone_won? || board.full?
+  #         swap_current_player_turn
+  #         clear_screen_and_display_board if human_turn?
+  #       end
+      
+  #     display_result
+  #     break unless play_again?
+  #     reset
+  #     reset_current_player_to_human
+  #     display_play_again_message
+  #   end
     
-    display_goodbye_message
-  end
+  #   display_goodbye_message
+  # end
 end
 
 game = TTTGame.new
