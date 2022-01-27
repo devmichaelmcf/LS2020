@@ -1,21 +1,39 @@
 
 # P.S. need to add in pause and clean up display,
 
-# NO FORMATTING NEEDED NOW. BETTER I CAN CLEANLY READ instructions and hints.
+# Format the display card method possibly.
 
 # Also tidy up convaluted GameEngine class.
 
 # Maybe fix dealer turn in GAME ENGINE. Make is so only a method invocation rather than million lines of logic.
 
+# likely remove a #HINT method in total type as doesn't look like EVER used.
 
 require "pry"
 
 module Hintable                # I DON'T THINK THE BELOW GETS USED
-
+  
+  def create_total_type_object # aim to MOVE lots of stuff to PLAYER class. Like soft total??? Or Handable. Or new module.
+    if total_21? #<<<<< ADDING a 21 object not caring if soft or hard
+      Total21.new(player_total)
+    elsif soft_total_18_or_above?
+      SoftTotal18AndAbove.new(player_total)      # implicit return
+    elsif soft_total_13_to_17?
+      SoftTotal13To17.new(player_total)
+    elsif hard_total_17_or_higher?
+      HardTotal17Plus.new(player_total)
+    elsif hard_total_13_to_16?
+      HardTotal13To16.new(player_total)
+    elsif hard_total_12?
+      HardTotal12.new(player_total)
+    else 
+      Total11AndBelow.new(player_total)
+    end
+  end
   
   def initialize_player_total_type_object    # remember this is a total type object
     self.player_hand_total_type = create_total_type_object
-    #NEED TO CREATE CLASS that looks at player total and creates the correct total_type (METHOD)
+    #NEED TO CREATE CLASS that looks at plater total and creates the correct total_type (METHOD)
   end
   
   def chance_dealer_busts
@@ -35,38 +53,39 @@ module Hintable                # I DON'T THINK THE BELOW GETS USED
    
   end
   
-  def display_hint_for_total21
-    puts "WELL DONE! You have the best score of 21. ADVISE select STAY as impossible to improve this hand. If you select HIT on a your hand will BUST or potentially become a lesser total (if a soft total)."
-  end
   
-  def display_hint_for_stay_recommendations
-     puts "Should STAY with a #{self.name_description} definitely!"
-     puts "#{would_have_hit_information}."
-     puts "-----------------------------------------------------"
-     puts "#{chance_dealer_busts}"
-  end
-  
-  def display_hint_for_hit_recommendations
-      puts "Should HIT and you have #{self.name_description}"
-      puts "#{would_have_stayed_information}."
-      puts "-----------------------------------------------------"
-      puts "#{chance_dealer_busts}"  #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< NOT FINISHED!!!
-  end
   
   # I AM TRYIG TO have a speciallised display esp for 21 player total (regardless of dealer hand)
   
   def display_hint_oop    # FOR USE ON TOTAL TYPE OBJECTS ONLY!!! OTHERWISE self will cause exceptions.
     #self.dealer_first_cards_value_player_hits_on.empty? ? "Should STAY with #{self.class} definitely!" : "Should HIT and you have #{self.class}"  #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< NOT FINISHED!!!
     if self.class == Total21
-      display_hint_for_total21
-      # puts "WELL DONE! You have the best score of 21. ADVISE select STAY as impossible to improve this hand. If you select HIT on a your hand will BUST or potentially become a lesser total (if a soft total)."
-    elsif self.dealer_first_cards_value_player_hits_on.empty?  # ***** change to stay? ******
-      display_hint_for_stay_recommendations
-    elsif self.dealer_first_cards_value_player_hits_on.include?(dealer_integer)
-      display_hint_for_hit_recommendations
+      puts "WELL DONE! You have the best score of 21. ADVISE select STAY as impossible to improve this hand. If you select HIT on a your hand will BUST or potentially become a lesser total (if a soft total)."
+    elsif self.dealer_first_cards_value_player_hits_on.empty?
+     puts "Should STAY with a #{self.name_description} definitely!"
+     puts "#{would_have_hit_information}."
+     puts "-----------------------------------------------------"
+     puts "#{chance_dealer_busts}"
     else 
-      display_hint_for_stay_recommendations
+      puts "Should HIT and you have #{self.name_description}"
+      puts "#{would_have_stayed_information}."
+      puts "-----------------------------------------------------"
+      puts "#{chance_dealer_busts}"  #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< NOT FINISHED!!!
     end
+    
+    
+    # working code below just uncomment if need back.
+    # if self.dealer_first_cards_value_player_hits_on.empty?
+    # puts "Should STAY with a #{self.name_description} definitely!"
+    # puts "#{would_have_hit_information}."
+    # puts "-----------------------------------------------------"
+    # puts "#{chance_dealer_busts}"
+    # else 
+    #   puts "Should HIT and you have #{self.name_description}"
+    #   puts "#{would_have_stayed_information}."
+    #   puts "-----------------------------------------------------"
+    #   puts "#{chance_dealer_busts}"  #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< NOT FINISHED!!!
+    # end
   end
   
   def would_have_stayed_information
@@ -83,7 +102,7 @@ module Hintable                # I DON'T THINK THE BELOW GETS USED
   
   def would_have_hit_information
     if self.dealer_first_cards_value_player_hits_on.empty?
-      "There was no card the dealer could have that would make hitting the optimal strategy!"
+      "There was no card the dealer could have that would make hitting the optimal strategy! Unless you are an idiot running idiotic strategy. This is possible and even likely looking at your play human!"
     else
       "We would only have recommended hit on the dealer cards #{self.dealer_first_cards_value_player_hits_on.join(", ")}" 
     end
@@ -97,17 +116,8 @@ module Hintable                # I DON'T THINK THE BELOW GETS USED
     player.hand.none? {|card_obj| card_obj.rank == "ACE" }
   end
   
-  def aces_count_as_one?
-    # added check for at least one ACE and ALSO that the aces count as one with the total
-    (player.hand.any? {|card_obj| card_obj.rank == "ACE" }) && player.total == player.total_aces_count_as_one
-  end
-  
   def hard_total_12?
-    player.total == 12 && (player.hand.count {|card_obj| card_obj.rank == "ACE" } == 1)
-  end
-  
-  def soft_12_two_aces?
-    player.hand.count {|obj| obj.rank == "ACE" } == 2
+    player.total == 12
   end
   
   def total_21?
@@ -115,20 +125,46 @@ module Hintable                # I DON'T THINK THE BELOW GETS USED
   end
   
   def hard_total_13_to_16?
-    player.total >= 13 && player.total <= 16 && ( no_ace_in_hand? || aces_count_as_one? )
+    player.total >= 13 && player.total <= 16 && no_ace_in_hand?
   end
   
   def hard_total_17_or_higher?
-    player.total >= 17 && ( no_ace_in_hand? || aces_count_as_one? )
+    player.total >= 17 && no_ace_in_hand?
   end
   
   def soft_total_13_to_17?
-    player.total >= 13 && player_total <= 17 && ace_in_hand? && !aces_count_as_one?    # added additional condition
+    player.total >- 13 && player_total <= 17 && ace_in_hand?
   end
   
   def soft_total_18_or_above?    # I want this to return true if player has 18 or above AND an ace
-    player.total >= 18 && ace_in_hand? && !aces_count_as_one?   # <<< added additional condition
+    player.total >= 18 && ace_in_hand?
   end
+  
+  # BELOW works perfectly but want a more OOP solution.
+  
+  # def display_optimal_player_first_move_only #remember this invoked on SELF. e.g. GameEngine. Remember this if in a module later.
+  #   if soft_total_18_or_above?
+  #     puts "You have a 'soft 18 or above!'. This is when you have an ACE AND a total of 18 or higher. The optimal strategy here is to always STAND! But what do I know? It's your choice."
+  #   elsif soft_total_13_to_17?
+  #     puts "You have a 'soft 13-17'. This is when you have an ACE AND a total of 13-17. The best strategy is ALWAYS HIT!"
+  #   elsif hard_total_17_or_higher?
+  #     puts "You have a 'hard 17 or HIGHER'. Which is 17 or above with NO ACE. You should definitely STAND here! Again, your choice though."
+  #   elsif hard_total_13_to_16?
+  #     if (2..6).include?(dealer_first_shown_card_total)
+  #       puts "When you have a hard 13-17 and dealer shows a 2-6 then best option is to STAND!"
+  #     else
+  #       puts "Hard 13-16 facing anything OTHER than dealer 2-6 you should HIT! Too likely the dealer beats your total otherwise."
+  #     end
+  #   elsif hard_total_12?
+  #     if (4..6).include?(dealer_first_shown_card_total)
+  #       puts "A hard player total of 12, with dealer showing a 4-6 means you should STAND!!!"
+  #     else
+  #       puts "Hard total 12, facing anything OTHER than a dealer 4-6 means you should HIT!"
+  #     end
+  #   else
+  #     puts "Everything else HIT!! 11 and below! No downside really to hitting."
+  #   end
+  # end
   
 end
 
@@ -194,35 +230,6 @@ module Handable # Clean up participant class. Likely #<=>, #bust? #total. Rememb
     initial_total    #return value of method
   end
   
-  
-  
-  # ACES as one method. Different from the 21 game total. Aces counted as one.
-  
-  def total_aces_count_as_one
-    collected_ranks = []
-    aces = 0
-    
-    self.hand.each {|card_obj| collected_ranks << card_obj.rank }
-    values_arr = collected_ranks.map do |rank| 
-                    if ("2".."10").to_a.include?(rank)
-                      rank.to_i
-                    elsif ["JACK", "QUEEN", "KING"].include?(rank)
-                      10
-                    elsif rank == "ACE"
-                      aces += 1
-                      1            # ONLY CHANGE FROM ORIGINAL. USE TO COMPARE generic total with total when  aces 1.
-                    end
-                  end
-                    
-    initial_total = values_arr.sum
-    until initial_total <= 21 || aces == 0
-      aces -= 1
-      initial_total -= 10
-    end
-    
-    initial_total    #return value of method
-  end
-  
 end
 
 class GameEngine
@@ -250,7 +257,70 @@ class GameEngine
     end
   end
   
- 
+  # def display_optimal_player_first_move_only #remember this invoked on SELF. e.g. GameEngine. Remember this if in a module later.
+  #   if soft_total_18_or_above?
+  #     puts "You have a 'soft 18 or above!'. This is when you have an ACE AND a total of 18 or higher. The optimal strategy here is to always STAND! But what do I know? It's your choice."
+  #   elsif soft_total_13_to_17?
+  #     puts "You have a 'soft 13-17'. This is when you have an ACE AND a total of 13-17. The best strategy is ALWAYS HIT!"
+  #   elsif hard_total_17_or_higher?
+  #     puts "You have a 'hard 17 or HIGHER'. Which is 17 or above with NO ACE. You should definitely STAND here! Again, your choice though."
+  #   elsif hard_total_13_to_16?
+  #     if (2..6).include?(dealer_first_shown_card_total)
+  #       puts "When you have a hard 13-17 and dealer shows a 2-6 then best option is to STAND!"
+  #     else
+  #       puts "Hard 13-17 facing anything OTHER than dealer 2-6 you should HIT! Too likely the dealer beats your total otherwise."
+  #     end
+  #   elsif hard_total_12?
+  #     if (4..6).include?(dealer_first_shown_card_total)
+  #       puts "A hard player total of 12, with dealer showing a 4-6 means you should STAND!!!"
+  #     else
+  #       puts "Hard total 12, facing anything OTHER than a dealer 4-6 means you should HIT!"
+  #     end
+  #   else
+  #     puts "Everything else HIT!! 11 and below! No downside really to hitting."
+  #   end
+    
+  # end
+  
+  # def ace_in_hand?
+  #   player.hand.any? {|card_obj| card_obj.rank == "ACE" }
+  # end
+  
+  # def no_ace_in_hand?
+  #   player.hand.none? {|card_obj| card_obj.rank == "ACE" }
+  # end
+  
+  # def hard_total_12?
+  #   player.total == 12
+  # end
+  
+  # def hard_total_13_to_16?
+  #   player.total >= 13 && player.total <= 16 && no_ace_in_hand?
+  # end
+  
+  # def hard_total_17_or_higher?
+  #   player.total >= 17 && no_ace_in_hand?
+  # end
+  
+  # def soft_total_13_to_17?
+  #   player.total >- 13 && player_total <= 17 && ace_in_hand?
+  # end
+  
+  # def soft_total_18_or_above?    # I want this to return true if player has 18 or above AND an ace
+  #   player.total >= 18 && ace_in_hand?
+  # end
+  
+  # def slow_down_execution_two_secs
+  #   sleep(2.0)
+  # end
+  
+  # def slow_down_execution_six_secs
+  #   sleep(6.0)
+  # end
+  
+  # def clear_screen_of_output
+  #   puts `clear`
+  # end
   
   def display_goodbye_message
     puts "Thanks for playing the OOP TWENTYONE game!"
@@ -288,8 +358,6 @@ class GameEngine
       HardTotal17Plus.new(player_total, dealer_first_shown_card_total)
     elsif hard_total_13_to_16?
       HardTotal13To16.new(player_total, dealer_first_shown_card_total)
-    elsif soft_12_two_aces?
-      SoftTotal12TwoAces.new(player_total, dealer_first_shown_card_total)
     elsif hard_total_12?
       HardTotal12.new(player_total, dealer_first_shown_card_total)
     # elsif total_21?
@@ -504,7 +572,145 @@ class GameEngine
   end
 end
 
+# module Hintable
+  
+#   def create_total_type_object # aim to MOVE lots of stuff to PLAYER class. Like soft total??? Or Handable. Or new module.
+#     if soft_total_18_or_above?
+#       SoftTotal18AndAbove.new(player_total, dealer_first_shown_card_total)      # implicit return
+#     elsif soft_total_13_to_17?
+#       SoftTotal13To17.new(player_total, dealer_first_shown_card_total)
+#     elsif hard_total_17_or_higher?
+#       HardTotal17Plus.new(player_total, dealer_first_shown_card_total)
+#     elsif hard_total_13_to_16?
+#       HardTotal13To16.new(player_total, dealer_first_shown_card_total)
+#     elsif hard_total_12?
+#       HardTotal12.new(player_total, dealer_first_shown_card_total)
+#     else 
+#       Total11AndBelow.new(player_total, dealer_first_shown_card_total)
+#     end
+#   end
+  
+#   def initialize_player_total_type_object    # remember this is a total type object
+#     self.player_hand_total_type = create_total_type_object
+#     #NEED TO CREATE CLASS that looks at plater total and creates the correct total_type (METHOD)
+#   end
+#   def ace_in_hand?
+#     player.hand.any? {|card_obj| card_obj.rank == "ACE" }
+#   end
+  
+#   def no_ace_in_hand?
+#     player.hand.none? {|card_obj| card_obj.rank == "ACE" }
+#   end
+  
+#   def hard_total_12
+#     player.total == 12
+#   end
+  
+#   def hard_total_13_to_16?
+#     player.total >= 13 && player.total <= 16 && no_ace_in_hand?
+#   end
+  
+#   def hard_total_17_or_higher?
+#     player.total >= 17 && no_ace_in_hand?
+#   end
+  
+#   def soft_total_13_to_17?
+#     player.total >- 13 && player_total <= 17 && ace_in_hand?
+#   end
+  
+#   def soft_total_18_or_above?    # I want this to return true if player has 18 or above AND an ace
+#     player.total >= 18 && ace_in_hand?
+#   end
+  
+#   def display_optimal_player_first_move_only #remember this invoked on SELF. e.g. GameEngine. Remember this if in a module later.
+#     if soft_total_18_or_above?
+#       puts "You have a 'soft 18 or above!'. This is when you have an ACE AND a total of 18 or higher. The optimal strategy here is to always STAND! But what do I know? It's your choice."
+#     elsif soft_total_13_to_17?
+#       puts "You have a 'soft 13-17'. This is when you have an ACE AND a total of 13-17. The best strategy is ALWAYS HIT!"
+#     elsif hard_total_17_or_higher?
+#       puts "You have a 'hard 17 or HIGHER'. Which is 17 or above with NO ACE. You should definitely STAND here! Again, your choice though."
+#     elsif hard_total_13_to_16?
+#       if (2..6).include?(dealer_first_shown_card_total)
+#         puts "When you have a hard 13-17 and dealer shows a 2-6 then best option is to STAND!"
+#       else
+#         puts "Hard 13-17 facing anything OTHER than dealer 2-6 you should HIT! Too likely the dealer beats your total otherwise."
+#       end
+#     elsif hard_total_12
+#       if (4..6).include?(dealer_first_shown_card_total)
+#         puts "A hard player total of 12, with dealer showing a 4-6 means you should STAND!!!"
+#       else
+#         puts "Hard total 12, facing anything OTHER than a dealer 4-6 means you should HIT!"
+#       end
+#     else
+#       puts "Everything else HIT!! 11 and below! No downside really to hitting."
+#     end
+#   end
+  
+# end
 
+# module PauseAndDisplayable
+#   def slow_down_execution_two_secs
+#     sleep(2.0)
+#   end
+  
+#   def slow_down_execution_six_secs
+#     sleep(6.0)
+#   end
+  
+#   def clear_screen_of_output
+#     puts `clear`
+#   end
+# end
+
+
+# module Handable # Clean up participant class. Likely #<=>, #bust? #total. Remember will need to use self now.
+# # Option of turning THIS module into a CLASS. AS I only want the behaviors for my participant hands I think a module will be 
+# # suffiencent. IF was a class Hand then would store as part of each participant state and class methods below on it.
+#   include Comparable
+  
+#   def <=>(other)      # PLAYER spaceship. Will ALSO define another in DEALER (will tidy up when refactor NOT now)
+#     self.total <=> other.total
+#   end
+  
+#   def bust?
+#     self.total > 21         # this calls the total method which the PLAYER class has access to. (SEE IT BELOW --VVVVV--)
+#   end
+  
+#   def display_hand
+#     puts "#{self.name}'s hand is:"
+#     puts "-------------"
+#     puts self.hand.join(",\n")
+#     puts "-------------"
+#   end
+  
+ 
+  
+#   def total
+#     collected_ranks = []
+#     aces = 0
+    
+#     self.hand.each {|card_obj| collected_ranks << card_obj.rank }
+#     values_arr = collected_ranks.map do |rank| 
+#                     if ("2".."10").to_a.include?(rank)
+#                       rank.to_i
+#                     elsif ["JACK", "QUEEN", "KING"].include?(rank)
+#                       10
+#                     elsif rank == "ACE"
+#                       aces += 1
+#                       11             # THIS whole method seems to work. Tested with rank values 10 x other values.
+#                     end
+#                   end
+                    
+#     initial_total = values_arr.sum
+#     until initial_total <= 21 || aces == 0
+#       aces -= 1
+#       initial_total -= 10
+#     end
+    
+#     initial_total    #return value of method
+#   end
+  
+# end
 
 
 class Participant
@@ -537,6 +743,36 @@ class Player < Participant
     end
     self.name = user_input
   end
+  
+  # def user_input_and_validation    # return value is STRING user input
+  #   loop do      # loop keeps going until a valid user input is given
+  #     puts "Do you want to Hit (h) or Stay (s)? Please enter the key now: "
+  #     user_input = gets.chomp.downcase
+  #     return user_input if user_input.start_with?("h", "s")
+  #     puts "Bad input! Enter 'h' to HIT or 's' to STAY."  
+  #   end
+  # end
+  
+  # def turn
+  #   user_input = ""
+  #     loop do
+  #       slow_down_execution_two_secs
+  #       puts "Your total is: #{self.total}." #  Make this a call to player total
+  #       slow_down_execution_two_secs
+  #       user_input = user_input_and_validation    # Loop. Only returns with a valid user STRING ^^^ Original method ABOVE ^^^
+  
+  #       break if user_input.== "s"
+  #       clear_screen_of_output
+      
+  #       card_removed = deck.remove_one_card # Careful with local variable and append setup. CARD OBJECT!!!!! (but has #to_s). 
+  #       player.hand << card_removed     #<< deck.remove_one_card (I DID A DOUBLE APPEND HENCE WHY BUGGED OUT :-)
+  #       puts "The card selected was the #{card_removed}"
+  #       puts ""
+  #       # slow_down_execution_two_secs
+  #       display_player_hand
+  #       break puts "You Bust! Your total was #{self.total}." if self.bust?
+  #     end
+  # end
   
 end
 
@@ -590,19 +826,12 @@ class Card
   end
   
   # def to_s
-  #   <<~CARD
-  #       ***********
-  #       *         *
-  #       *#{rank.center(9)}*
-  #       *         *
-  #       *#{suit.center(9)}*
-  #       *         *
-  #       ***********
-  #       CARD
+  #   puts "-----"
+  #   puts "#{rand}"
+    
+    
+    
   # end
-  
-  
-  # I am KEEPING THIS version of #to_s. Easier to read at execution.
   
   def to_s       # keep. experiment with nicely formatted "card" IMAGE and see what happens.
     "#{rank} of #{suit}"
@@ -617,6 +846,30 @@ class TotalType
   def dealer_card_reasoning    # <<<<<< May need to remove as doesn't appear needed.
     if self.dealer_first_cards_value_player_hits_on.empty?
       "There was no possible dealer card " 
+    end
+  end
+  
+  # NOT NEEDED. As when called on array object it can't be located here (needs to be in array class which i can't do.
+  # I decided to have in the display_hit_on and display_stay_on method inplementations.)
+  
+  # def joinor
+  #   # looks funky because I'm going to use it on an ARRAY object because i can use it in both hit AND ALSO stay arrays. 
+  #   # Remember there is two arrays stored in each total type object. 
+    
+  #   case self.length
+  #     when 1 then self.join
+  #     when 2 then self.join(" and ")
+  #     else
+  #       self[0..-3].join(", ") + ", " + self[-2..-1].join(" and ")
+  #   end
+  # end
+  
+  
+  def hint
+    if dealer_first_cards_value_player_hits_on.empty?
+      puts "Best Strategy is to STAND and take NO CARD!"
+    else 
+      puts "Best strategy showing a #{self.class} versus a dealer is to HIT!"
     end
   end
   
@@ -662,6 +915,14 @@ class HardTotal13To16 < TotalType
     @name_description = "hard total of 13 to 16"
     # optimal strategy depends on what dealer first card shows
   end
+  
+  # def init_arr_dealer_integers_to_stand_on(dealer_first_card_integer)
+  #   if [2,3,4,5,6].include?(dealer_first_card_integer)
+  #     []
+  #   else
+  #     [1,2,3,4,5,6,7,8,9,10,11]
+  #   end
+  # end
 end
 
 class HardTotal12 < TotalType
@@ -674,19 +935,14 @@ class HardTotal12 < TotalType
     @name_description = "hard total of 12 exactly"
     # optimal strategy depends on what dealer first card shows
   end
-end
-
-class SoftTotal12TwoAces
-    def initialize(exact_player_total, dealer_integer)
-    @exact_player_total = exact_player_total
-    @dealer_integer = dealer_integer
-    #@dealer_first_cards_value_player_hits_on = init_arr_dealer_integers_to_stand_on(dealer_first_card_integer)
-    @dealer_first_cards_value_player_hits_on = [2,3,4,5,6,7,8,9,10,11]
-    @dealer_first_cards_value_player_stays_on = []         # advise hit as impossible to bust.
-    @name_description = "soft total of 12 exactly"
-    # optimal strategy depends on what dealer first card shows
-  end
   
+  # def init_arr_dealer_integers_to_stand_on(dealer_first_card_integer)
+  #   if [4,5,6].include?(dealer_first_card_integer)
+  #     []
+  #   else
+  #     [1,2,3,4,5,6,7,8,9,10,11]
+  #   end
+  # end
 end
 
 class Total11AndBelow < TotalType
